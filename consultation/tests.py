@@ -1,3 +1,40 @@
-from django.test import TestCase
+from django.contrib.auth.models import User
+from django.urls import reverse
+from rest_framework.test import APITestCase
+from rest_framework import status
 
-# Create your tests here.
+from client.models import Client
+from specialist.models import Specialist
+from consultation.models import Consultation
+
+
+class ConsultationTests(APITestCase):
+    def setUp(self):
+        user_client = User.objects.create(username='clientuser', is_active=True)
+        self.app_client = Client.objects.create(user=user_client)
+        self.client.force_authenticate(user=user_client)
+
+        user_specialist = User.objects.create(username='specialistuser', is_active=True)
+        self.app_specialist = Specialist.objects.create(user=user_specialist, price=0)
+
+    def test_start_consultation(self):
+        url = reverse('start-consultation')
+
+        # no consultation with provided id exists
+        fake_id = 12345
+        data = {'consulation': fake_id, 'status': Consultation.STATUS_ACTIVE}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        # create consultation and let one of the users start (set status)
+        consultation = Consultation.objects.create(client=self.app_client, specialist=self.app_specialist)
+        data = {'consulation': consultation.pk, 'status': Consultation.STATUS_ACTIVE}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Consultation.objects.filter(status=Consultation.STATUS_ACTIVE).count(), 1)
+
+        # end consultation (set status)
+        data = {'consulation': consultation.pk, 'status': Consultation.STATUS_FINISHED}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Consultation.objects.filter(status=Consultation.STATUS_FINISHED).count(), 1)
