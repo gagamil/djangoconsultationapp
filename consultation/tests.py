@@ -18,23 +18,23 @@ class ConsultationTests(APITestCase):
         self.app_specialist = Specialist.objects.create(user=user_specialist, price=0)
 
     def test_start_consultation(self):
-        url = reverse('start-consultation')
-
-        # no consultation with provided id exists
         fake_id = 12345
-        data = {'consulation': fake_id, 'status': Consultation.STATUS_ACTIVE}
-        response = self.client.put(url, data, format='json')
+        # no consultation with provided id exists
+        url = reverse('update-consultation', kwargs={'pk':fake_id})
+        data = {'status': Consultation.STATUS_ACTIVE}
+        response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # create consultation and let one of the users start (set status)
         consultation = Consultation.objects.create(client=self.app_client, specialist=self.app_specialist)
-        data = {'consulation': consultation.pk, 'status': Consultation.STATUS_ACTIVE}
-        response = self.client.put(url, data, format='json')
+        url = reverse('update-consultation', kwargs={'pk':consultation.id})
+        data = {'status': Consultation.STATUS_ACTIVE}
+        response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Consultation.objects.filter(status=Consultation.STATUS_ACTIVE).count(), 1)
 
         # end consultation (set status)
-        data = {'consulation': consultation.pk, 'status': Consultation.STATUS_FINISHED}
-        response = self.client.put(url, data, format='json')
+        data = {'status': Consultation.STATUS_FINISHED}
+        response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Consultation.objects.filter(status=Consultation.STATUS_FINISHED).count(), 1)
