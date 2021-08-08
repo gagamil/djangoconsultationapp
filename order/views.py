@@ -1,6 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
+from common.signals import order_cleared
 from .models import Order
 from .serializers import OrderSerializer
 
@@ -20,3 +21,4 @@ class OrderListCreateAPIView(generics.ListCreateAPIView):
         if order.specialist.price == 0:
             order.status = Order.STATUS_OK
             order.save()
+            order_cleared.send(sender=self.__class__, specialist=order.specialist.pk, client=order.client.pk)
