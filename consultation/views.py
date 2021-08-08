@@ -36,3 +36,8 @@ class RoomConnectionTokenGetAPIView(views.APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         token = get_client_token(request.user.pk, consultation_id)
         return Response(token)
+
+
+class ConsultationRoomStatusCallback(views.APIView):
+    def post(self, request, format=None):
+        return Response()

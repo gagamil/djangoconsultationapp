@@ -63,3 +63,10 @@ class ConsultationTests(APITestCase):
         url = reverse('get-rtc-token', kwargs={'pk':consultation.id})
         response = self.client.get(url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class ConsultationTests(APITestCase):
+    def test_callback(self):
+        url = reverse('twilio-room-status-update')
+        response = self.client.post(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
