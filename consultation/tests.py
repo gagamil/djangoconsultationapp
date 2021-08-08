@@ -38,3 +38,9 @@ class ConsultationTests(APITestCase):
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Consultation.objects.filter(status=Consultation.STATUS_FINISHED).count(), 1)
+
+    def test_rtc_connection_token_generation_view(self):
+        consultation = Consultation.objects.create(client=self.app_client, specialist=self.app_specialist)
+        url = reverse('get-rtc-token', kwargs={'pk':consultation.id})
+        response = self.client.get(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
