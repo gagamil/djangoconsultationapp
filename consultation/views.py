@@ -1,5 +1,6 @@
 from rest_framework import generics
-from rest_framework import views
+from rest_framework import views, status
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
@@ -29,5 +30,9 @@ class RoomConnectionTokenGetAPIView(views.APIView):
 
     def get(self, request, pk, format=None):
         consultation_id = pk
+        queryset = Consultation.objects.filter(status__in=[Consultation.STATUS_PENDING, Consultation.STATUS_ACTIVE])
+        consultation = get_object_or_404(queryset, pk=consultation_id)
+        if not consultation.client.user == request.user and not consultation.specialist.user == request.user:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         token = get_client_token(request.user.pk, consultation_id)
         return Response(token)

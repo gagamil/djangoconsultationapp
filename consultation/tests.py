@@ -14,8 +14,8 @@ class ConsultationTests(APITestCase):
         self.app_client = Client.objects.create(user=user_client)
         self.client.force_authenticate(user=user_client)
 
-        user_specialist = User.objects.create(username='specialistuser', is_active=True)
-        self.app_specialist = Specialist.objects.create(user=user_specialist, price=0)
+        self.user_specialist = User.objects.create(username='specialistuser', is_active=True)
+        self.app_specialist = Specialist.objects.create(user=self.user_specialist, price=0)
 
     def test_start_consultation(self):
         fake_id = 12345
@@ -39,8 +39,27 @@ class ConsultationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Consultation.objects.filter(status=Consultation.STATUS_FINISHED).count(), 1)
 
-    def test_rtc_connection_token_generation_view(self):
+    def test_rtc_connection_token_generation_view_200(self):
+        '''
+        Test both specialist and client may fetch the access token to establish rtc connection.
+        '''
         consultation = Consultation.objects.create(client=self.app_client, specialist=self.app_specialist)
         url = reverse('get-rtc-token', kwargs={'pk':consultation.id})
         response = self.client.get(url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.client.force_authenticate(user=self.user_specialist)
+        url = reverse('get-rtc-token', kwargs={'pk':consultation.id})
+        response = self.client.get(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_rtc_connection_token_generation_view_404(self):
+        consultation = Consultation.objects.create(client=self.app_client, specialist=self.app_specialist)
+
+        user_client = User.objects.create(username='clientuser2', is_active=True)
+        app_client = Client.objects.create(user=user_client)
+        self.client.force_authenticate(user=user_client)
+
+        url = reverse('get-rtc-token', kwargs={'pk':consultation.id})
+        response = self.client.get(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
